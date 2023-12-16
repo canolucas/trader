@@ -36,7 +36,13 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "openai": "^3.2.1"
+    "alphavantage": "^2.5.0",
+    "browserless": "^10.2.3",
+    "cheerio": "^1.0.0-rc.12",
+    "gpt-prompt-kit": "^1.1.2",
+    "html-get": "^2.13.11",
+    "openai": "^3.2.1",
+    "puppeteer": "^21.6.1"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
