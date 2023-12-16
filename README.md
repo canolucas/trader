@@ -8,7 +8,7 @@ You need to install npm in your oparating system
 $ npm install
 
 # Configure application
-Create a .env file in the project's root directory with the following content:
+Create a file named config.env located at the project's root directory with the following content:
 
 GPT_API_KEY="openai api key"
 
