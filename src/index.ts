@@ -1,4 +1,6 @@
-import { GPTPromptKit, gptPromptKitFactory } from 'gpt-prompt-kit';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import { OpenAI } from 'openai';
 import { each } from 'async';
 
 var request = require('request');
@@ -9,33 +11,25 @@ export default class Trader {
   private ALPHA_API_KEY: string;
 
   private symbols: string[] = ["AAPL"];
-  private gptPromptKit: GPTPromptKit;
-
-  private formatFree: (description: string) => Promise<string>;
-
-  private outputFormat: string = `Title: <Title>
-## Should I buy today ##
-<Number 1 to 10 indicating how profitable would it be to buy this ticker today>
-## Should I sell today ##
-<Number 1 to 10 indicating how profitable would it be to sell this ticker today>`;
+  private openai: OpenAI;
 
   constructor() {
 
-    require("dotenv").config();
+    dotenv.config({ path: path.join(__dirname, '..', 'config.env') });
 
     this.GPT_API_KEY = process.env['GPT_API_KEY'] || '';
     this.ALPHA_API_KEY = process.env['ALPHA_API_KEY'] || '';
 
-    this.gptPromptKit = gptPromptKitFactory(this.GPT_API_KEY);
-
-    this.formatFree = this.gptPromptKit.formatFree(this.outputFormat);
+    this.openai = new OpenAI({
+      apiKey: this.GPT_API_KEY,
+    });
   }
 
   rateSymbol(symbol: string, cb: Function)  {
 
-    let input: string = 'Input data: ';
-
+    let ctx = this;
     var url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + symbol + '&apikey=' + this.ALPHA_API_KEY;
+    let input: string = 'Input data: ';
 
     request.get({
       url: url,
@@ -53,13 +47,18 @@ export default class Trader {
           var txt = JSON.stringify(data).replace(/\"/gi, "").replace(/\s/gi, "");
 
           input += "Market data for the nasdaq symbol '" + symbol + "': " + txt + "\n";
-          input += 'Using the given input data, generate a report which title is: What should I do with this ticker today.'
+          input += 'Using the given input data, complete the following form. Take in account that both numbers indicated below must add up to 100: '
+          input += 'Assign a numeric value between 0 and 100 indicating how profitable it is to buy this ticker today. Please answer with a number: 0-100. '
+          input += 'Assign a numeric value between 0 and 100 indicating how profitable it is to sell this ticker today. Please answer with a number: 0-100.'
 
-          this.formatFree(input).then(output => {
+          ctx.openai.chat.completions.create({
+            messages: [{ role: 'user', content: input }],
+            model: 'gpt-3.5-turbo',
+          }).then((output: any) => {
             console.log(output);
             cb(null);
           })
-          .catch(error => {
+          .catch((error: any) => {
             cb(error);
           });
         }
