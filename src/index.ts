@@ -39,29 +39,28 @@ export default class Trader {
         if (err) {
           cb(err);
           return;
-        } else if (res.statusCode !== 200) {
+        }
+        if (res.statusCode !== 200) {
           cb('Error. Status Code: ', res.statusCode);
           return;
-        } else {
-
-          var txt = JSON.stringify(data).replace(/\"/gi, "").replace(/\s/gi, "");
-
-          input += "Market data for the nasdaq symbol '" + symbol + "': " + txt + "\n";
-          input += 'Using the given input data, complete the following form. Take in account that both numbers indicated below must add up to 100: '
-          input += 'Assign a numeric value between 0 and 100 indicating how profitable it is to buy this ticker today. Please answer with a number: 0-100. '
-          input += 'Assign a numeric value between 0 and 100 indicating how profitable it is to sell this ticker today. Please answer with a number: 0-100.'
-
-          ctx.openai.chat.completions.create({
-            messages: [{ role: 'user', content: input }],
-            model: 'gpt-3.5-turbo',
-          }).then((output: any) => {
-            console.log(output);
-            cb(null);
-          })
-          .catch((error: any) => {
-            cb(error);
-          });
         }
+        var txt = JSON.stringify(data).replace(/\"/gi, "").replace(/\s/gi, "");
+
+        input += "Market data for the nasdaq symbol '" + symbol + "': " + txt + "\n";
+        input += 'Using the given input data, complete the following form. Take in account that both numbers indicated below must add up to 100: '
+        input += 'Assign a numeric value between 0 and 100 indicating how profitable it is to buy this ticker today. Please answer with a number: 0-100. '
+        input += 'Assign a numeric value between 0 and 100 indicating how profitable it is to sell this ticker today. Please answer with a number: 0-100.'
+
+        ctx.openai.chat.completions.create({
+          messages: [{ role: 'user', content: input }],
+          model: 'gpt-3.5-turbo',
+        }).then((output: any) => {
+          console.log(output);
+          cb(null);
+        })
+        .catch((error: any) => {
+          cb(error);
+        });
     });
   }
 
