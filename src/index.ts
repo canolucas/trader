@@ -27,6 +27,8 @@ class Trader {
   private gptPromptKit: GPTPromptKit;
   private alphaInstance: any;
 
+  private formatFree: (description: string) => Promise<string>;
+
   private outputFormat: string = `Title: <Title>
 ## Should I buy today ##
 <Number 1 to 10 indicating how profitable would it be to buy this ticker today>
@@ -40,24 +42,25 @@ class Trader {
 
     this.gptPromptKit = gptPromptKitFactory(this.GPT_API_KEY);
     this.alphaInstance = alpha({ key: this.ALPHA_API_KEY });
+
+    this.formatFree = this.gptPromptKit.formatFree(this.outputFormat);
   }
 
   public prompt(): void {
 
-    const formatFree: (description: string) => Promise<string> = this.gptPromptKit.formatFree(this.outputFormat);
-    getContent('https://www.advfn.com/nasdaq/nasdaq.asp').then((html) => this.parseHtml(html, formatFree));
+    getContent('https://www.advfn.com/nasdaq/nasdaq.asp').then((html) => this.parseHtml(html));
   }
 
-  rateSymbol(symbol: string, formatFree: (description: string) => Promise<string>)  {
+  rateSymbol(symbol: string)  {
 
     let input: string = 'Input data: ';
 
     this.alphaInstance.data.weekly(symbol, 'compact', 'csv', '60min').then((data: any) => {
       input += "CSV weekly market data for the nasdaq symbol '" + symbol + "':\n";
-      input += data;
+      input += data + "\n";
       input += 'Using the given input data, generate a report which title is: What should I do with this ticker today.'
 
-      formatFree(input).then(output => {
+      this.formatFree(input).then(output => {
         console.log(output);
         process.exit();
       })
@@ -69,7 +72,7 @@ class Trader {
     });
   }
 
-  parseHtml(html: string, formatFree: (description: string) => Promise<string>): void {
+  parseHtml(html: string): void {
     let ctx = this;
     const $ = cheerio.load(html);
     $('div.market-table-container table tbody tr').each(function(index: any, tr: any) {
@@ -79,7 +82,7 @@ class Trader {
       let symbol: string = $(tr).find('.col-symbol').text();
       ctx.symbols.push(symbol);
     });
-    ctx.symbols.forEach(symbol => ctx.rateSymbol(symbol, formatFree));
+    ctx.symbols.forEach(symbol => ctx.rateSymbol(symbol));
 
 
 
