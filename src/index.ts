@@ -19,10 +19,12 @@ export default class Trader {
 ## Should I sell today ##
 <Number 1 to 10 indicating how profitable would it be to sell this ticker today>`;
 
-  constructor(GPT_API_KEY: string, ALPHA_API_KEY: string) {
+  constructor() {
 
-    this.GPT_API_KEY = GPT_API_KEY;
-    this.ALPHA_API_KEY = ALPHA_API_KEY;
+    require("dotenv").config();
+
+    this.GPT_API_KEY = process.env['GPT_API_KEY'] || '';
+    this.ALPHA_API_KEY = process.env['ALPHA_API_KEY'] || '';
 
     this.gptPromptKit = gptPromptKitFactory(this.GPT_API_KEY);
 

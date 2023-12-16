@@ -39,6 +39,7 @@
   "dependencies": {
     "alphavantage": "^2.5.0",
     "async": "^3.2.5",
+    "dotenv": "^16.3.1",
     "gpt-prompt-kit": "^1.1.2",
     "openai": "^3.2.1",
     "request": "^2.88.2"
