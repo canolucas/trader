@@ -1,32 +1,15 @@
 import { GPTPromptKit, gptPromptKitFactory } from 'gpt-prompt-kit';
 import { each } from 'async';
 
-const cheerio = require('cheerio');
-const alpha = require('alphavantage');
-const createBrowserless = require('browserless');
-const getHTML = require('html-get');
+var request = require('request');
 
-const browserlessFactory = createBrowserless();
-
-process.on('exit', () => {
-  browserlessFactory.close();
-});
-
-const getContent = async (url: string) => {
-  const browserContext = browserlessFactory.createContext();
-  const result = await getHTML(url, { browserContext });
-  await browserContext.destroyContext();
-  return result;
-}
-
-class Trader {
-
+export default class Trader {
+  
   private GPT_API_KEY: string;
   private ALPHA_API_KEY: string;
 
-  private symbols: string[] = [];
+  private symbols: string[] = ["AAPL"];
   private gptPromptKit: GPTPromptKit;
-  private alphaInstance: any;
 
   private formatFree: (description: string) => Promise<string>;
 
@@ -42,49 +25,48 @@ class Trader {
     this.ALPHA_API_KEY = ALPHA_API_KEY;
 
     this.gptPromptKit = gptPromptKitFactory(this.GPT_API_KEY);
-    this.alphaInstance = alpha({ key: this.ALPHA_API_KEY });
 
     this.formatFree = this.gptPromptKit.formatFree(this.outputFormat);
-  }
-
-  public prompt(): void {
-
-    getContent('https://www.advfn.com/nasdaq/nasdaq.asp').then((html) => this.parseHtml(html));
   }
 
   rateSymbol(symbol: string, cb: Function)  {
 
     let input: string = 'Input data: ';
 
-    this.alphaInstance.data.weekly(symbol, 'compact', 'csv', '60min').then((data: any) => {
-      input += "CSV weekly market data for the nasdaq symbol '" + symbol + "':\n";
-      input += data + "\n";
-      input += 'Using the given input data, generate a report which title is: What should I do with this ticker today.'
+    var url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + symbol + '&apikey=' + this.ALPHA_API_KEY;
 
-      this.formatFree(input).then(output => {
-        console.log(output);
-      })
-      .catch(error => {
-        console.error(error);
-      });
+    request.get({
+      url: url,
+      json: true,
+      headers: {'User-Agent': 'request'}
+    }, (err: any, res: any, data: any) => {
+        if (err) {
+          cb(err);
+          return;
+        } else if (res.statusCode !== 200) {
+          cb('Error. Status Code: ', res.statusCode);
+          return;
+        } else {
 
-    })
-    .catch((alphaError:any) => {
-      console.error(alphaError);
+          var txt = JSON.stringify(data).replace(/\"/gi, "").replace(/\s/gi, "");
+
+          input += "Market data for the nasdaq symbol '" + symbol + "': " + txt + "\n";
+          input += 'Using the given input data, generate a report which title is: What should I do with this ticker today.'
+
+          this.formatFree(input).then(output => {
+            console.log(output);
+            cb(null);
+          })
+          .catch(error => {
+            cb(error);
+          });
+        }
     });
   }
 
-  parseHtml(html: string): void {
+  public process(): void {
+
     let ctx = this;
-    const $ = cheerio.load(html);
-    $('div.market-table-container table tbody tr').each(function(index: any, tr: any) {
-      if (index < 2) {
-        return;
-      }
-      let symbol: string = $(tr).find('.col-symbol').text();
-      ctx.symbols.push(symbol);
-    });
-    console.log('scanning ' + ctx.symbols.join(","));
 
     each(ctx.symbols, function (symbol: string, cb) {
 
@@ -99,4 +81,3 @@ class Trader {
     });
   }
 }
-export default Trader;

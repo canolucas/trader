@@ -39,12 +39,9 @@
   "dependencies": {
     "alphavantage": "^2.5.0",
     "async": "^3.2.5",
-    "browserless": "^10.2.3",
-    "cheerio": "^1.0.0-rc.12",
     "gpt-prompt-kit": "^1.1.2",
-    "html-get": "^2.13.11",
     "openai": "^3.2.1",
-    "puppeteer": "^21.6.1"
+    "request": "^2.88.2"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
