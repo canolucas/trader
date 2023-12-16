@@ -1,4 +1,5 @@
 import { GPTPromptKit, gptPromptKitFactory } from 'gpt-prompt-kit';
+import { each } from 'async';
 
 const cheerio = require('cheerio');
 const alpha = require('alphavantage');
@@ -51,7 +52,7 @@ class Trader {
     getContent('https://www.advfn.com/nasdaq/nasdaq.asp').then((html) => this.parseHtml(html));
   }
 
-  rateSymbol(symbol: string)  {
+  rateSymbol(symbol: string, cb: Function)  {
 
     let input: string = 'Input data: ';
 
@@ -62,13 +63,14 @@ class Trader {
 
       this.formatFree(input).then(output => {
         console.log(output);
-        process.exit();
       })
       .catch(error => {
         console.error(error);
-        process.exit(1);
       });
 
+    })
+    .catch((alphaError:any) => {
+      console.error(alphaError);
     });
   }
 
@@ -82,10 +84,19 @@ class Trader {
       let symbol: string = $(tr).find('.col-symbol').text();
       ctx.symbols.push(symbol);
     });
-    ctx.symbols.forEach(symbol => ctx.rateSymbol(symbol));
+    console.log('scanning ' + ctx.symbols.join(","));
 
+    each(ctx.symbols, function (symbol: string, cb) {
 
+      ctx.rateSymbol(symbol, cb);
 
+    }, function (err) {
+        if (err) {
+            console.log(err);
+            process.exit(1);
+        }
+        process.exit();
+    });
   }
 }
 export default Trader;
