@@ -25,7 +25,7 @@ export default class Trader {
     });
   }
 
-  rateSymbol(symbol: string, cb: Function)  {
+  processItem(symbol: string, cb: any)  {
 
     let ctx = this;
     var url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=' + symbol + '&apikey=' + this.ALPHA_API_KEY;
@@ -41,7 +41,7 @@ export default class Trader {
           return;
         }
         if (res.statusCode !== 200) {
-          cb('Error. Status Code: ', res.statusCode);
+          cb('Error. Status Code: ' + res.statusCode);
           return;
         }
         var txt = JSON.stringify(data).replace(/\"/gi, "").replace(/\s/gi, "");
@@ -68,11 +68,12 @@ export default class Trader {
 
     let ctx = this;
 
-    each(ctx.symbols, function (symbol: string, cb) {
-
-      ctx.rateSymbol(symbol, cb);
-
-    }, function (err) {
+    each(
+      ctx.symbols,
+      (symbol: string, cb: ErrorCallback) => {
+        ctx.processItem(symbol, cb);
+      },
+      (err) => {
         if (err) {
             console.log(err);
             process.exit(1);
